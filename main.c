@@ -120,19 +120,20 @@ int main( int argc, char* argv[] )
               fprintf(stderr, "\nError: '%c' is a bad command\n\n", argv[ 3 ][ i ]);
               BMP_Free( bmp_in );
               BMP_Free( bmp_out );
+              remove(".temp.bmp");
               return 1;//bad command - not the best solution
           }
         }
       }
       if(i+1 < command_length){
-          BMP_WriteFile( bmp_out, "temp.bmp" );
+          //temp.bmp is an annoying workaround
+          BMP_WriteFile( bmp_out, ".temp.bmp" );
           bmp_in = bmp_out;
-          bmp_out = BMP_ReadFile( "temp.bmp" );
-      } else {
-        bmp_in = bmp_out;
-        //remove("temp.bmp");
+          bmp_out = BMP_ReadFile( ".temp.bmp" );
       }
     }
+    bmp_in = bmp_out;
+    remove(".temp.bmp");
     /* Save result */
     BMP_WriteFile( bmp_in, argv[ 2 ] );
     BMP_CHECK_ERROR( stderr, -2 );
