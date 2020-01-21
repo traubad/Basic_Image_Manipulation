@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define temp_filename ".temp.bmp"
+
 int strlength(const char* string) //https://stackoverflow.com/questions/25578886/
 {
     int i;
@@ -16,11 +18,25 @@ void create_files(BMP** in, BMP** out, const char* filename){
   *out = BMP_ReadFile( filename );
 }
 
+void clear_and_delete(BMP** in, BMP** out){
+  if(*in != *out){ //avoids a seg fault
+    BMP_Free( *out );
+  }
+  BMP_Free( *in );
+  remove(temp_filename);
+}
+
 void apply_left_rotation(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y, UINT height){
     UCHAR val;
     BMP_GetPixelIndex(*bmp_in, height-y-1, x, &val);
     BMP_SetPixelIndex(*bmp_out, x, y, val);
-}
+  }
+
+  void apply_right_rotation(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y, UINT height){
+      UCHAR val;
+      BMP_GetPixelIndex(*bmp_in, y, height-x-1, &val);
+      BMP_SetPixelIndex(*bmp_out, x, y, val);
+    }
 
 void apply_negative(BMP** bmp_in, BMP**  bmp_out, UINT x, UINT y){
     UCHAR val;
@@ -66,8 +82,7 @@ int main( int argc, char* argv[] )
 {
     BMP*    bmp_in;
     BMP*    bmp_out;
-    //UCHAR   val;
-    UINT    width, height, depth;
+    UINT    width, height;
     UINT    x, y;
 
     if ( strcmp(argv [ 1 ], "--help") == 0 )
@@ -83,8 +98,6 @@ int main( int argc, char* argv[] )
     }
 
     /* Read an image file */
-    // bmp_in = BMP_ReadFile( argv[ 1 ] );
-    // bmp_out = BMP_ReadFile( argv[ 1 ] );
     create_files( &bmp_in, &bmp_out, argv[ 1 ] );
     BMP_CHECK_ERROR( stderr, -1 ); /* If an error has occurred, notify and exit */
 
@@ -112,35 +125,37 @@ int main( int argc, char* argv[] )
               apply_left_rotation(&bmp_in, &bmp_out, x, y, height);
               break;
 
+            case 'r':
+              apply_right_rotation(&bmp_in, &bmp_out, x, y, height);
+              break;
+
             case 'c':
               adjust_contrast(&bmp_in, &bmp_out, x, y, 10);
               break;
 
             default:
               fprintf(stderr, "\nError: '%c' is a bad command\n\n", argv[ 3 ][ i ]);
-              BMP_Free( bmp_in );
-              BMP_Free( bmp_out );
-              remove(".temp.bmp");
-              return 1;//bad command - not the best solution
+              clear_and_delete(&bmp_in, &bmp_out);
+              return 1;
           }
         }
       }
+
+      //.temp.bmp is an annoying workaround because of the difficulty in copying structs
       if(i+1 < command_length){
-          //temp.bmp is an annoying workaround
-          BMP_WriteFile( bmp_out, ".temp.bmp" );
+          BMP_WriteFile( bmp_out, temp_filename );
+          BMP_GetError();
           bmp_in = bmp_out;
-          bmp_out = BMP_ReadFile( ".temp.bmp" );
+          bmp_out = BMP_ReadFile( temp_filename );
       }
     }
     bmp_in = bmp_out;
-    remove(".temp.bmp");
     /* Save result */
     BMP_WriteFile( bmp_in, argv[ 2 ] );
     BMP_CHECK_ERROR( stderr, -2 );
 
     /* Free all memory allocated for the image */
-    BMP_Free( bmp_in );
-    //BMP_Free( bmp_out ); // unnecessary?  Causes seg faults
+    clear_and_delete(&bmp_in, &bmp_out);
 
     return 0;
 }
