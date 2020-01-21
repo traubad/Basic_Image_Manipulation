@@ -32,11 +32,23 @@ void apply_left_rotation(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y, UINT heigh
     BMP_SetPixelIndex(*bmp_out, x, y, val);
   }
 
-  void apply_right_rotation(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y, UINT height){
-      UCHAR val;
-      BMP_GetPixelIndex(*bmp_in, y, height-x-1, &val);
-      BMP_SetPixelIndex(*bmp_out, x, y, val);
-    }
+void apply_right_rotation(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y, UINT height){
+    UCHAR val;
+    BMP_GetPixelIndex(*bmp_in, y, height-x-1, &val);
+    BMP_SetPixelIndex(*bmp_out, x, y, val);
+  }
+
+void apply_mirror_vertical(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y, UINT height){
+    UCHAR val;
+    BMP_GetPixelIndex(*bmp_in, height-x-1, y, &val);
+    BMP_SetPixelIndex(*bmp_out, x, y, val);
+  }
+
+void apply_mirror_horizontal(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y, UINT height){
+    UCHAR val;
+    BMP_GetPixelIndex(*bmp_in, x, height-y-1, &val);
+    BMP_SetPixelIndex(*bmp_out, x, y, val);
+  }
 
 void apply_negative(BMP** bmp_in, BMP**  bmp_out, UINT x, UINT y){
     UCHAR val;
@@ -91,6 +103,8 @@ int main( int argc, char* argv[] )
         printf("Commands include:\n");
         printf("\tl: rotate left\n");
         printf("\tr: rotate right\n");
+        printf("\th: mirror horizontal\n");
+        printf("\tv: mirror vertical\n");
         printf("\tb: black and white\n");
         printf("\tn: negative\n");
         printf("\tc: increase contrast by 10\n\n");
@@ -127,6 +141,14 @@ int main( int argc, char* argv[] )
 
             case 'r':
               apply_right_rotation(&bmp_in, &bmp_out, x, y, height);
+              break;
+
+            case 'h':
+              apply_mirror_horizontal(&bmp_in, &bmp_out, x, y, height);
+              break;
+
+            case 'v':
+              apply_mirror_vertical(&bmp_in, &bmp_out, x, y, height);
               break;
 
             case 'c':
