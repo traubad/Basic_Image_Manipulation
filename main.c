@@ -1,18 +1,19 @@
-/* Creates a negative image of the input bitmap file */
 #include "lib/qdbmp.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #define temp_filename ".temp.bmp"
 
-
+//Get length of string, from Stack Overflow
 int strlength(const char* string){ //https://stackoverflow.com/questions/25578886/
     int i;
     for(i=0;string[i]!='\0';i++);
     return i;
 }
 
+//creates a comma separated string of ints from an array (taken from Stack Overflow)
 size_t join_integers(UINT *num, size_t num_len, char *buf, size_t buf_len) {
     size_t i;
     UINT written = strlength(buf);
@@ -86,17 +87,50 @@ void adjust_contrast(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y, float contrast
     BMP_SetPixelIndex(*bmp_out, x, y, val);
 }
 
-void black_and_white(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
+void black_and_white(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y, unsigned short threshold){
     UCHAR val;
 
     BMP_GetPixelIndex(*bmp_in, x, y, &val);
 
-    if (val > 255/2){
+    if (val > threshold){
       val = 255;
     } else{
       val = 0;
     }
     BMP_SetPixelIndex(*bmp_out, x, y, val);
+}
+
+//Based on https://towardsdatascience.com/edge-detection-in-python-a3c263a13e03
+void apply_edge_detection(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
+  UCHAR val, final_score;
+
+  int vertical_filter[3][3] = {
+    {-1,-2,-1},
+    { 0, 0, 0},
+    { 1, 2, 1}
+  };
+
+  int horizontal_filter[3][3] = {
+    {-1, 0, 1},
+    {-2, 0, 2},
+    {-1, 0, 1}
+  };
+
+  double vertical_score = 0;
+  double horizontal_score = 0;
+
+  for (short z=-1; z<=1; z++){
+    for (short w=-1; w<=1; w++){
+      BMP_GetPixelIndex(*bmp_in, x+w, y+z, &val);
+      vertical_score += vertical_filter[w+1][z+1] * val;
+      horizontal_score += horizontal_filter[w+1][z+1] * val;
+    }
+  }
+  vertical_score /= 4;
+  horizontal_score /= 4;
+
+  final_score = sqrt((vertical_score*vertical_score) + (horizontal_score*horizontal_score));
+  BMP_SetPixelIndex(*bmp_out, x, y, final_score);
 }
 
 int main( int argc, char* argv[] ){
@@ -118,6 +152,7 @@ int main( int argc, char* argv[] ){
         printf("\tb: black and white\n");
         printf("\tn: negative\n");
         printf("\tc: increase contrast by 10\n");
+        printf("\te: Apply edge detection\n");
         printf("\tg: Create a histogram\n\n");
         return 0;
     }
@@ -139,7 +174,7 @@ int main( int argc, char* argv[] ){
         for ( y = 0 ; y < height ; ++y ){
           switch( argv[ 3 ][i] ){
             case 'b':
-              black_and_white(&bmp_in, &bmp_out, x, y);
+              black_and_white(&bmp_in, &bmp_out, x, y, 100);
               break;
 
             case 'n':
@@ -171,6 +206,15 @@ int main( int argc, char* argv[] ){
               histogram[val] += 1;
               break;
 
+            case 'e':
+              if(x > 1 && x+1 < width && y > 0 && y+1 < height){
+                  apply_edge_detection(&bmp_in, &bmp_out, x, y);
+              } else {
+                  BMP_GetPixelIndex(bmp_in, x, y, &val);
+                  BMP_SetPixelIndex(bmp_out, x, y, 255);
+              }
+              break;
+
             default: //TODO this could be better
               fprintf(stderr, "\nError: '%c' is a bad command\n\n", argv[ 3 ][ i ]);
               clear_and_delete(&bmp_in, &bmp_out);
@@ -182,7 +226,6 @@ int main( int argc, char* argv[] ){
       //.temp.bmp is an annoying workaround because of the difficulty in copying structs
       if(i+1 < command_length){
           BMP_WriteFile( bmp_out, temp_filename );
-          BMP_GetError();
           bmp_in = bmp_out;
           bmp_out = BMP_ReadFile( temp_filename );
       }
@@ -195,7 +238,6 @@ int main( int argc, char* argv[] ){
 
         size = join_integers(histogram, 256, buf, 1100);
         strcat(buf," &");
-
         system(buf);
         memset(histogram, 0, 256 * sizeof(histogram[0]));
       }
