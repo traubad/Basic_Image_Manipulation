@@ -2,7 +2,7 @@ from sys import argv
 import matplotlib.pyplot as plt
 
 values = [int(e) for e in argv[-1].split(",") if e.isdigit()]
-commands = argv[-2].replace("g","").replace("m","")
+commands = argv[-2].replace("g","")
 if commands.endswith(".py") or not commands:
     title_string = "Untouched Image Histogram"
 else:

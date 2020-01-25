@@ -100,6 +100,26 @@ void black_and_white(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y, unsigned short
     BMP_SetPixelIndex(*bmp_out, x, y, val);
 }
 
+int cmpfunc (const void * a, const void * b) {
+   return ( *(int*)a - *(int*)b );
+}
+
+//Based on this paper: https://www.ijsr.net/archive/v6i3/25031706.pdf
+void apply_median_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
+  UCHAR val;
+  UCHAR vals[9] = {0};
+  short i = 0;
+
+  for (short z=-1; z<=1; z++){
+    for (short w=-1; w<=1; w++){
+      BMP_GetPixelIndex(*bmp_in, x+w, y+z, &val);
+      vals[i++] = val;
+    }
+  }
+  qsort(vals, 9, sizeof(UCHAR), cmpfunc);
+  BMP_SetPixelIndex(*bmp_out, x, y, vals[5]);
+}
+
 //Based on https://towardsdatascience.com/edge-detection-in-python-a3c263a13e03
 void apply_edge_detection(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
   UCHAR val, final_score;
@@ -126,9 +146,17 @@ void apply_edge_detection(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
       horizontal_score += horizontal_filter[w+1][z+1] * val;
     }
   }
+
+  /**
+   * Since we are doing detection on both horizontal and vertical edges, we just
+   * divide the raw scores by 4 (rather than adding 4 and then dividing by 8).
+   * It is not a major change but one which will better highlight the edges
+   * of our image.
+   **/
+
   vertical_score /= 4;
   horizontal_score /= 4;
-
+  //re-normalize and sum scores
   final_score = sqrt((vertical_score*vertical_score) + (horizontal_score*horizontal_score));
   BMP_SetPixelIndex(*bmp_out, x, y, final_score);
 }
@@ -153,6 +181,7 @@ int main( int argc, char* argv[] ){
         printf("\tn: negative\n");
         printf("\tc: increase contrast by 10\n");
         printf("\te: Apply edge detection\n");
+        printf("\tm: Apply Median Filter\n");
         printf("\tg: Create a histogram\n\n");
         return 0;
     }
@@ -209,9 +238,12 @@ int main( int argc, char* argv[] ){
             case 'e':
               if(x > 1 && x+1 < width && y > 0 && y+1 < height){
                   apply_edge_detection(&bmp_in, &bmp_out, x, y);
-              } else {
-                  BMP_GetPixelIndex(bmp_in, x, y, &val);
-                  BMP_SetPixelIndex(bmp_out, x, y, 255);
+              }
+              break;
+
+            case 'm':
+              if(x > 1 && x+1 < width && y > 0 && y+1 < height){
+                  apply_median_filter(&bmp_in, &bmp_out, x, y);
               }
               break;
 
