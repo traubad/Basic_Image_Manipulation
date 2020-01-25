@@ -124,6 +124,8 @@ void apply_median_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
 void apply_edge_detection(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
   UCHAR val, final_score;
 
+  UCHAR adjustment = 1;//my tinkering w/ the algorithm (set to 1 for normal behavior)
+
   int vertical_filter[3][3] = {
     {-1,-2,-1},
     { 0, 0, 0},
@@ -142,12 +144,12 @@ void apply_edge_detection(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
   for (short z=-1; z<=1; z++){
     for (short w=-1; w<=1; w++){
       BMP_GetPixelIndex(*bmp_in, x+w, y+z, &val);
-      vertical_score += vertical_filter[w+1][z+1] * val;
-      horizontal_score += horizontal_filter[w+1][z+1] * val;
+      vertical_score += vertical_filter[w+1][z+1]*adjustment * val;
+      horizontal_score += horizontal_filter[w+1][z+1]*adjustment * val;
     }
   }
 
-  /**
+  /** (taken from artical)
    * Since we are doing detection on both horizontal and vertical edges, we just
    * divide the raw scores by 4 (rather than adding 4 and then dividing by 8).
    * It is not a major change but one which will better highlight the edges
