@@ -19,7 +19,7 @@ struct args{
 };
 
 UINT histogram[256] = {0};
-pthread_mutex_t count_mutex;
+pthread_mutex_t histogram_mutex;
 
 //Get length of string, from Stack Overflow
 int strlength(const char* string){ //https://stackoverflow.com/questions/25578886/
@@ -255,9 +255,9 @@ void *controller(void *input){
 
           case 'g':
              BMP_GetPixelIndex(bmp_in, x, y, &val);
-             pthread_mutex_lock(&count_mutex);
+             pthread_mutex_lock(&histogram_mutex);
              histogram[val] += 1;
-             pthread_mutex_unlock(&count_mutex);
+             pthread_mutex_unlock(&histogram_mutex);
              break;
 
           default: //TODO this could be better
