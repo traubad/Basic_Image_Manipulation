@@ -123,7 +123,7 @@ void apply_median_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
 //Based on this paper: https://www.ijsr.net/archive/v6i3/25031706.pdf
 void apply_smoothing_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
   UCHAR val;
-  int sum = 0;
+  unsigned short sum = 0;
   short i = 0;
 
   for (short z=-1; z<=1; z++){
