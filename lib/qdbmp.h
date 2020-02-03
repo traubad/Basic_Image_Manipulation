@@ -102,8 +102,8 @@ void			BMP_WriteFile				( BMP* bmp, const char* filename );
 /* Meta info */
 UINT			BMP_GetWidth				( BMP* bmp );
 UINT			BMP_GetHeight				( BMP* bmp );
-USHORT			BMP_GetDepth				( BMP* bmp );
-
+USHORT		BMP_GetDepth				( BMP* bmp );
+UCHAR* 		BMP_GetData					( BMP* bmp );
 
 /* Pixel access */
 void			BMP_GetPixelRGB				( BMP* bmp, UINT x, UINT y, UCHAR* r, UCHAR* g, UCHAR* b );
