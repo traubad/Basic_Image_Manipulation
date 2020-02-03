@@ -256,7 +256,7 @@ void *controller(void *input){
           case 'g':
              BMP_GetPixelIndex(bmp_in, x, y, &val);
              pthread_mutex_lock(&histogram_mutex);
-             histogram[val] += 1;
+             histogram[val]++;
              pthread_mutex_unlock(&histogram_mutex);
              break;
 
