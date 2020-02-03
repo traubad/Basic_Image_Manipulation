@@ -6,7 +6,7 @@
 #include <pthread.h>
 
 #define temp_filename ".temp.bmp"
-#define num_threads 6
+#define num_threads 8
 
 struct args{
   BMP* bmp_in;
