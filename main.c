@@ -7,6 +7,7 @@
 
 #define temp_filename ".temp.bmp"
 #define num_threads 8
+#define filter_size 15
 
 struct args{
   BMP* bmp_in;
@@ -121,8 +122,8 @@ void apply_median_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
   UCHAR vals[9] = {0};
   short i = 0;
 
-  for (short z=-1; z<=1; z++){
-    for (short w=-1; w<=1; w++){
+  for (short z= 0-((filter_size-1)/2); z<= ((filter_size-1)/2); z++){
+    for (short w= 0-((filter_size-1)/2); w<=((filter_size-1)/2); w++){
       BMP_GetPixelIndex(*bmp_in, x+w, y+z, &val);
       vals[i++] = val;
     }
@@ -137,13 +138,13 @@ void apply_smoothing_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
   unsigned short sum = 0;
   short i = 0;
 
-  for (short z=-1; z<=1; z++){
-    for (short w=-1; w<=1; w++){
+  for (short z= 0-((filter_size-1)/2); z<= ((filter_size-1)/2); z++){
+    for (short w= 0-((filter_size-1)/2); w<=((filter_size-1)/2); w++){
       BMP_GetPixelIndex(*bmp_in, x+w, y+z, &val);
       sum += val;
     }
   }
-  BMP_SetPixelIndex(*bmp_out, x, y, sum/9);
+  BMP_SetPixelIndex(*bmp_out, x, y, sum/(filter_size*filter_size));
 }
 
 //Based on https://towardsdatascience.com/edge-detection-in-python-a3c263a13e03
@@ -233,7 +234,7 @@ void *controller(void *input){
           case 'm':
           case 's':
           case 'e':
-            if(x > 1 && x+1 < width && y > 0 && y+1 < height){
+            if(x > ((filter_size-1)/2) && x+1 < width && y > ((filter_size-1)/2) && y+1 < height){
               if(command == 'm'){
                 apply_median_filter(&bmp_in, &bmp_out, x, y);
               } else if(command == 's'){
