@@ -119,7 +119,7 @@ int cmpfunc (const void * a, const void * b) {
 //Based on this paper: https://www.ijsr.net/archive/v6i3/25031706.pdf
 void apply_median_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
   UCHAR val;
-  UCHAR* vals = (UCHAR*)malloc(filter_size * sizeof(UCHAR));
+  UCHAR* vals = (UCHAR*)malloc(filter_size * filter_size * sizeof(UCHAR));
   short i = 0;
 
   for (short z= 0-((filter_size-1)/2); z<= ((filter_size-1)/2); z++){
@@ -200,8 +200,8 @@ void *controller(void *input){
     BMP* bmp_out = ((struct args*)input)->bmp_out;
     UINT x, y;
     /* Iterate through all the image's pixels */
-    for ( x = start ; x < width ; x+=num_threads ){
-      for ( y = 0 ; y < height ; y++ ){
+    for ( x = 0 ; x < width ; x++ ){
+      for ( y = start ; y < height ; y+=num_threads ){
         switch( command ){
           case 'b':
             black_and_white(&bmp_in, &bmp_out, x, y, 100);
@@ -305,8 +305,8 @@ int main( int argc, char* argv[] ){
           inArg->bmp_out = bmp_out;
           inArg->height = height;
           inArg->width = width;
-          inArg->start = t;
           inArg->command = argv[3][i];
+          inArg->start = t;
           pthread_create(&tids[t], NULL, controller, (void *)inArg);
        }
         for(t = 0; t< num_threads; t++){
