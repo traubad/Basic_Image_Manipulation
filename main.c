@@ -231,16 +231,19 @@ void *controller(void *input){
             adjust_contrast(&bmp_in, &bmp_out, x, y, 10);
             break;
 
-          case 'm':
-          case 's':
           case 'e':
+            if(x > 0 && x+1 < width && y > 0 && y+1 < height){
+              apply_edge_detection(&bmp_in, &bmp_out, x, y);
+            }
+          break;
+
+          case 's':
+          case 'm':
             if(x > ((filter_size-1)/2) && x+1 < width && y > ((filter_size-1)/2) && y+1 < height){
               if(command == 'm'){
                 apply_median_filter(&bmp_in, &bmp_out, x, y);
               } else if(command == 's'){
                 apply_smoothing_filter(&bmp_in, &bmp_out, x, y);
-              } else if(command =='e'){
-                apply_edge_detection(&bmp_in, &bmp_out, x, y);
               }
             }
             break;
