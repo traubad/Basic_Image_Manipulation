@@ -5,7 +5,8 @@
 #include <math.h>
 
 #define temp_filename ".temp.bmp"
-#define filter_size 15
+//only use odd numbers here
+#define filter_size 5
 
 //Get length of string, from Stack Overflow
 int strlength(const char* string){ //https://stackoverflow.com/questions/25578886/
