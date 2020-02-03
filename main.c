@@ -18,6 +18,9 @@ struct args{
   unsigned char start;
 };
 
+UINT histogram[256] = {0};
+pthread_mutex_t count_mutex;
+
 //Get length of string, from Stack Overflow
 int strlength(const char* string){ //https://stackoverflow.com/questions/25578886/
     int i;
@@ -130,6 +133,7 @@ void apply_median_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
   }
   qsort(vals, (filter_size*filter_size), sizeof(UCHAR), cmpfunc);
   BMP_SetPixelIndex(*bmp_out, x, y, vals[(((filter_size*filter_size)/2)+1)]);
+  free(vals);
 }
 
 //Based on this paper: https://www.ijsr.net/archive/v6i3/25031706.pdf
@@ -199,6 +203,7 @@ void *controller(void *input){
     BMP* bmp_in = ((struct args*)input)->bmp_in;
     BMP* bmp_out = ((struct args*)input)->bmp_out;
     UINT x, y;
+    UCHAR val;
     /* Iterate through all the image's pixels */
     for ( x = 0 ; x < width ; x++ ){
       for ( y = start ; y < height ; y+=num_threads ){
@@ -248,6 +253,13 @@ void *controller(void *input){
             }
             break;
 
+          case 'g':
+             BMP_GetPixelIndex(bmp_in, x, y, &val);
+             pthread_mutex_lock(&count_mutex);
+             histogram[val] += 1;
+             pthread_mutex_unlock(&count_mutex);
+             break;
+
           default: //TODO this could be better
             fprintf(stderr, "\nError: '%c' is a bad command\n\n", command);
             clear_and_delete(&bmp_in, &bmp_out);
@@ -264,8 +276,6 @@ int main( int argc, char* argv[] ){
     UINT    i, t;
     UCHAR   val;
     pthread_t* tids;
-
-    UINT histogram[256] = {0};
 
     if ( argc < 3 || strcmp(argv [ 1 ], "--help") == 0 ){
         printf("\n\nFormat: inFilename, outfilename, commands\n\n");
@@ -298,7 +308,6 @@ int main( int argc, char* argv[] ){
     tids = (pthread_t*)malloc(num_threads * sizeof(pthread_t));
 
     for (i = 0; i < command_length; i++){
-      if(argv[3][i] != 'g'){
         for(t = 0; t< num_threads; t++){
           struct args *inArg = (struct args *)malloc(sizeof(struct args));
           inArg->bmp_in = bmp_in;
@@ -312,19 +321,19 @@ int main( int argc, char* argv[] ){
         for(t = 0; t< num_threads; t++){
           pthread_join(tids[t], NULL);
         }
-     } else {
-       size_t size;
-       char buf[1100] = "python3 histogram.py ";
-       for(int j=0; j< i; j++)
-         buf[strlength(buf)] = argv[3][j];
-       strcat(buf, " ");
-       size = join_integers(histogram, 256, buf, 1100);
-       strcat(buf," &");
-       system(buf);
-       memset(histogram, 0, 256 * sizeof(histogram[0]));
+      if(argv[3][i] == 'g'){
+        size_t size;
+        char buf[1100] = "python3 histogram.py ";
+        for(int j=0; j< i; j++)
+          buf[strlength(buf)] = argv[3][j];
+        strcat(buf, " ");
+        size = join_integers(histogram, 256, buf, 1100);
+        strcat(buf," &");
+        system(buf); //Runs the command in the buffer
+        memset(histogram, 0, 256 * sizeof(histogram[0]));
      }
-      memcpy(BMP_GetData(bmp_in), BMP_GetData(bmp_out), sizeof(UCHAR)*(width*width));
-    }
+    memcpy(BMP_GetData(bmp_in), BMP_GetData(bmp_out), sizeof(UCHAR)*(width*width));
+  }
 
   /* Save result */
   BMP_WriteFile( bmp_in, argv[ 2 ] );
