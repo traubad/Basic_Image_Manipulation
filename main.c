@@ -108,7 +108,7 @@ int cmpfunc (const void * a, const void * b) {
 //Based on this paper: https://www.ijsr.net/archive/v6i3/25031706.pdf
 void apply_median_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
   UCHAR val;
-  UCHAR* vals = (UCHAR*)malloc(filter_size * sizeof(UCHAR));
+  UCHAR* vals = (UCHAR*)malloc(filter_size * filter_size * sizeof(UCHAR));
   short i = 0;
 
   for (short z= 0-((filter_size-1)/2); z<= ((filter_size-1)/2); z++){
@@ -259,7 +259,7 @@ int main( int argc, char* argv[] ){
                 apply_edge_detection(&bmp_in, &bmp_out, x, y);
               }
             break;
-            
+
             case 'm':
             case 's':
               if(x > ((filter_size-1)/2) && x+1 < width && y > ((filter_size-1)/2) && y+1 < height){
