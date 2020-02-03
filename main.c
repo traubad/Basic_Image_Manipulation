@@ -3,8 +3,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <pthread.h>
 
 #define temp_filename ".temp.bmp"
+#define num_threads 8
+
+struct args{
+  BMP* bmp_in;
+  BMP* bmp_out;
+  UINT height;
+  UINT width;
+  char command;
+  unsigned char start;
+};
 
 //Get length of string, from Stack Overflow
 int strlength(const char* string){ //https://stackoverflow.com/questions/25578886/
@@ -178,12 +189,77 @@ void apply_edge_detection(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
   BMP_SetPixelIndex(*bmp_out, x, y, final_score);
 }
 
+
+void *controller(void *input){
+    unsigned char start = ((struct args*)input)->start;
+    int height = ((struct args*)input)->height;
+    int width = ((struct args*)input)->width;
+    char command = ((struct args*)input)->command;
+    BMP* bmp_in = ((struct args*)input)->bmp_in;
+    BMP* bmp_out = ((struct args*)input)->bmp_out;
+    UINT    x, y;
+    /* Iterate through all the image's pixels */
+    for ( x = start ; x < width ; x+=num_threads ){
+      for ( y = 0 ; y < height ; y++ ){
+        switch( command ){
+          case 'b':
+            black_and_white(&bmp_in, &bmp_out, x, y, 100);
+            break;
+
+          case 'n':
+            apply_negative(&bmp_in, &bmp_out, x, y);
+            break;
+
+          case 'l':
+            apply_left_rotation(&bmp_in, &bmp_out, x, y, height);
+            break;
+
+          case 'r':
+            apply_right_rotation(&bmp_in, &bmp_out, x, y, height);
+            break;
+
+          case 'h':
+            apply_mirror_horizontal(&bmp_in, &bmp_out, x, y, height);
+            break;
+
+          case 'v':
+            apply_mirror_vertical(&bmp_in, &bmp_out, x, y, height);
+            break;
+
+          case 'c':
+            adjust_contrast(&bmp_in, &bmp_out, x, y, 10);
+            break;
+
+          case 'm':
+          case 's':
+          case 'e':
+            if(x > 1 && x+1 < width && y > 0 && y+1 < height){
+              if(command == 'm'){
+                apply_median_filter(&bmp_in, &bmp_out, x, y);
+              } else if(command == 's'){
+                apply_smoothing_filter(&bmp_in, &bmp_out, x, y);
+              } else if(command =='e'){
+                apply_edge_detection(&bmp_in, &bmp_out, x, y);
+              }
+            }
+            break;
+
+          default: //TODO this could be better
+            fprintf(stderr, "\nError: '%c' is a bad command\n\n", command);
+            clear_and_delete(&bmp_in, &bmp_out);
+            exit(1);
+        }
+      }
+    }
+}
+
 int main( int argc, char* argv[] ){
     BMP*    bmp_in;
     BMP*    bmp_out;
     UINT    width, height;
-    UINT    x, y;
+    UINT    i, t;
     UCHAR   val;
+    pthread_t* tids;
 
     UINT histogram[256] = {0};
 
@@ -215,92 +291,51 @@ int main( int argc, char* argv[] ){
     BMP_GetError();
     int command_length = strlength(argv[ 3 ]);
 
-    for (int i = 0; i < command_length; i++){
-      /* Iterate through all the image's pixels */
-      for ( x = 0 ; x < width ; ++x ){
-        for ( y = 0 ; y < height ; ++y ){
-          switch( argv[ 3 ][i] ){
-            case 'b':
-              black_and_white(&bmp_in, &bmp_out, x, y, 100);
-              break;
+    tids = (pthread_t*)malloc(num_threads * sizeof(pthread_t));
 
-            case 'n':
-              apply_negative(&bmp_in, &bmp_out, x, y);
-              break;
-
-            case 'l':
-              apply_left_rotation(&bmp_in, &bmp_out, x, y, height);
-              break;
-
-            case 'r':
-              apply_right_rotation(&bmp_in, &bmp_out, x, y, height);
-              break;
-
-            case 'h':
-              apply_mirror_horizontal(&bmp_in, &bmp_out, x, y, height);
-              break;
-
-            case 'v':
-              apply_mirror_vertical(&bmp_in, &bmp_out, x, y, height);
-              break;
-
-            case 'c':
-              adjust_contrast(&bmp_in, &bmp_out, x, y, 10);
-              break;
-
-            case 'g':
-              BMP_GetPixelIndex(bmp_in, x, height-y-1, &val);
-              histogram[val] += 1;
-              break;
-
-            case 'm':
-            case 's':
-            case 'e':
-              if(x > 1 && x+1 < width && y > 0 && y+1 < height){
-                if(argv[ 3 ][i] == 'm'){
-                  apply_median_filter(&bmp_in, &bmp_out, x, y);
-                } else if(argv[ 3 ][i] == 's'){
-                  apply_smoothing_filter(&bmp_in, &bmp_out, x, y);
-                } else if(argv[ 3 ][i] =='e'){
-                  apply_edge_detection(&bmp_in, &bmp_out, x, y);
-                }
-              }
-              break;
-
-            default: //TODO this could be better
-              fprintf(stderr, "\nError: '%c' is a bad command\n\n", argv[ 3 ][ i ]);
-              clear_and_delete(&bmp_in, &bmp_out);
-              return 1;
-          }
-        }
+    for (i = 0; i < command_length; i++){
+      if(argv[3][i] != 'g'){
+        for(t = 0; t< num_threads; t++){
+          struct args *inArg = (struct args *)malloc(sizeof(struct args));
+          inArg->bmp_in = bmp_in;
+          inArg->bmp_out = bmp_out;
+          inArg->height = height;
+          inArg->width = width;
+          inArg->start = t;
+          inArg->command = argv[3][i];
+          pthread_create(&tids[t], NULL, controller, (void *)inArg);
+       }
+     }
+      for(t = 0; t< num_threads; t++){
+        pthread_join(tids[t], NULL);
       }
-
       //.temp.bmp is an annoying workaround because of the difficulty in copying structs
       if(i+1 < command_length){
           BMP_WriteFile( bmp_out, temp_filename );
           bmp_in = bmp_out;
           bmp_out = BMP_ReadFile( temp_filename );
       }
-      if(argv[ 3 ][i] == 'g'){
-        size_t size;
-        char buf[1100] = "python3 histogram.py ";
-        for(int j=0; j< i; j++)
-          buf[strlength(buf)] = argv[3][j];
-        strcat(buf, " ");
-
-        size = join_integers(histogram, 256, buf, 1100);
-        strcat(buf," &");
-        system(buf);
-        memset(histogram, 0, 256 * sizeof(histogram[0]));
-      }
     }
-    bmp_in = bmp_out;
-    /* Save result */
-    BMP_WriteFile( bmp_in, argv[ 2 ] );
-    BMP_CHECK_ERROR( stderr, -2 );
+    // if(argv[ 3 ][i] == 'g'){
+    //   size_t size;
+    //   char buf[1100] = "python3 histogram.py ";
+    //   for(int j=0; j< i; j++)
+    //     buf[strlength(buf)] = argv[3][j];
+    //   strcat(buf, " ");
+    //   size = join_integers(histogram, 256, buf, 1100);
+    //   strcat(buf," &");
+    //   system(buf);
+    //   memset(histogram, 0, 256 * sizeof(histogram[0]));
+    // }
+  // }
 
-    /* Free all memory allocated for the image */
-    clear_and_delete(&bmp_in, &bmp_out);
+  bmp_in = bmp_out;
+  /* Save result */
+  BMP_WriteFile( bmp_in, argv[ 2 ] );
+  BMP_CHECK_ERROR( stderr, -2 );
 
-    return 0;
+  /* Free all memory allocated for the image */
+  clear_and_delete(&bmp_in, &bmp_out);
+
+  return 0;
 }
