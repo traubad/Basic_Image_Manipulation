@@ -6,7 +6,7 @@
 #include <pthread.h>
 
 #define temp_filename ".temp.bmp"
-#define num_threads 8
+#define num_threads 6
 
 struct args{
   BMP* bmp_in;
@@ -197,7 +197,7 @@ void *controller(void *input){
     char command = ((struct args*)input)->command;
     BMP* bmp_in = ((struct args*)input)->bmp_in;
     BMP* bmp_out = ((struct args*)input)->bmp_out;
-    UINT    x, y;
+    UINT x, y;
     /* Iterate through all the image's pixels */
     for ( x = start ; x < width ; x+=num_threads ){
       for ( y = 0 ; y < height ; y++ ){
