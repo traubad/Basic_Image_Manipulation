@@ -274,13 +274,7 @@ int main( int argc, char* argv[] ){
           }
         }
       }
-
-      //.temp.bmp is an annoying workaround because of the difficulty in copying structs
-      if(i+1 < command_length){
-          BMP_WriteFile( bmp_out, temp_filename );
-          bmp_in = bmp_out;
-          bmp_out = BMP_ReadFile( temp_filename );
-      }
+      memcpy(BMP_GetData(bmp_in), BMP_GetData(bmp_out), sizeof(UCHAR)*(width*width));
       if(argv[ 3 ][i] == 'g'){
         size_t size;
         char buf[1100] = "python3 histogram.py ";
@@ -294,7 +288,6 @@ int main( int argc, char* argv[] ){
         memset(histogram, 0, 256 * sizeof(histogram[0]));
       }
     }
-    bmp_in = bmp_out;
     /* Save result */
     BMP_WriteFile( bmp_in, argv[ 2 ] );
     BMP_CHECK_ERROR( stderr, -2 );

@@ -401,6 +401,11 @@ UINT BMP_GetHeight( BMP* bmp )
 	return ( bmp->Header.Height );
 }
 
+UCHAR* BMP_GetData( BMP* bmp )
+{
+	return ( bmp-> Data );
+}
+
 
 /**************************************************************
 	Returns the image's color depth (bits per pixel).
