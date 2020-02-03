@@ -305,25 +305,23 @@ int main( int argc, char* argv[] ){
           inArg->command = argv[3][i];
           pthread_create(&tids[t], NULL, controller, (void *)inArg);
        }
+        for(t = 0; t< num_threads; t++){
+          pthread_join(tids[t], NULL);
+        }
+     } else {
+       size_t size;
+       char buf[1100] = "python3 histogram.py ";
+       for(int j=0; j< i; j++)
+         buf[strlength(buf)] = argv[3][j];
+       strcat(buf, " ");
+       size = join_integers(histogram, 256, buf, 1100);
+       strcat(buf," &");
+       system(buf);
+       memset(histogram, 0, 256 * sizeof(histogram[0]));
      }
-      for(t = 0; t< num_threads; t++){
-        pthread_join(tids[t], NULL);
-      }
-      //.temp.bmp is an annoying workaround because of the difficulty in copying structs
       memcpy(BMP_GetData(bmp_in), BMP_GetData(bmp_out), sizeof(UCHAR)*(width*width));
     }
-    // if(argv[ 3 ][i] == 'g'){
-    //   size_t size;
-    //   char buf[1100] = "python3 histogram.py ";
-    //   for(int j=0; j< i; j++)
-    //     buf[strlength(buf)] = argv[3][j];
-    //   strcat(buf, " ");
-    //   size = join_integers(histogram, 256, buf, 1100);
-    //   strcat(buf," &");
-    //   system(buf);
-    //   memset(histogram, 0, 256 * sizeof(histogram[0]));
-    // }
-  // }
+
   /* Save result */
   BMP_WriteFile( bmp_in, argv[ 2 ] );
   BMP_CHECK_ERROR( stderr, -2 );
