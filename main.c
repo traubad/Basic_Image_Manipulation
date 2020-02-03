@@ -5,6 +5,7 @@
 #include <math.h>
 
 #define temp_filename ".temp.bmp"
+#define filter_size 15
 
 //Get length of string, from Stack Overflow
 int strlength(const char* string){ //https://stackoverflow.com/questions/25578886/
@@ -107,17 +108,17 @@ int cmpfunc (const void * a, const void * b) {
 //Based on this paper: https://www.ijsr.net/archive/v6i3/25031706.pdf
 void apply_median_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
   UCHAR val;
-  UCHAR vals[9] = {0};
+  UCHAR* vals = (UCHAR*)malloc(filter_size * sizeof(UCHAR)); ;
   short i = 0;
 
-  for (short z=-1; z<=1; z++){
-    for (short w=-1; w<=1; w++){
+  for (short z= 0-((filter_size-1)/2); z<= ((filter_size-1)/2); z++){
+    for (short w= 0-((filter_size-1)/2); w<=((filter_size-1)/2); w++){
       BMP_GetPixelIndex(*bmp_in, x+w, y+z, &val);
       vals[i++] = val;
     }
   }
-  qsort(vals, 9, sizeof(UCHAR), cmpfunc);
-  BMP_SetPixelIndex(*bmp_out, x, y, vals[5]);
+  qsort(vals, filter_size*filter_size, sizeof(UCHAR), cmpfunc);
+  BMP_SetPixelIndex(*bmp_out, x, y, vals[(((filter_size*filter_size)/2)+1)]);
 }
 
 //Based on this paper: https://www.ijsr.net/archive/v6i3/25031706.pdf
@@ -126,13 +127,13 @@ void apply_smoothing_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
   unsigned short sum = 0;
   short i = 0;
 
-  for (short z=-1; z<=1; z++){
-    for (short w=-1; w<=1; w++){
+  for (short z= 0-((filter_size-1)/2); z<= ((filter_size-1)/2); z++){
+    for (short w= 0-((filter_size-1)/2); w<=((filter_size-1)/2); w++){
       BMP_GetPixelIndex(*bmp_in, x+w, y+z, &val);
       sum += val;
     }
   }
-  BMP_SetPixelIndex(*bmp_out, x, y, sum/9);
+  BMP_SetPixelIndex(*bmp_out, x, y, sum/(filter_size*filter_size));
 }
 
 //Based on https://towardsdatascience.com/edge-detection-in-python-a3c263a13e03
@@ -256,7 +257,7 @@ int main( int argc, char* argv[] ){
             case 'm':
             case 's':
             case 'e':
-              if(x > 1 && x+1 < width && y > 0 && y+1 < height){
+              if(x > ((filter_size-1)/2) && x+1 < width && y > ((filter_size-1)/2) && y+1 < height){
                 if(argv[ 3 ][i] == 'm'){
                   apply_median_filter(&bmp_in, &bmp_out, x, y);
                 } else if(argv[ 3 ][i] == 's'){
