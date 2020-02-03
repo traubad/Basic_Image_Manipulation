@@ -120,6 +120,21 @@ void apply_median_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
   BMP_SetPixelIndex(*bmp_out, x, y, vals[5]);
 }
 
+//Based on this paper: https://www.ijsr.net/archive/v6i3/25031706.pdf
+void apply_smoothing_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
+  UCHAR val;
+  int sum = 0;
+  short i = 0;
+
+  for (short z=-1; z<=1; z++){
+    for (short w=-1; w<=1; w++){
+      BMP_GetPixelIndex(*bmp_in, x+w, y+z, &val);
+      sum += val;
+    }
+  }
+  BMP_SetPixelIndex(*bmp_out, x, y, sum/9);
+}
+
 //Based on https://towardsdatascience.com/edge-detection-in-python-a3c263a13e03
 void apply_edge_detection(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
   UCHAR val, final_score;
@@ -184,6 +199,7 @@ int main( int argc, char* argv[] ){
         printf("\tc: increase contrast by 10\n");
         printf("\te: Apply edge detection\n");
         printf("\tm: Apply Median Filter\n");
+        printf("\ts: Apply Smoothing Filter\n");
         printf("\tg: Create a histogram\n\n");
         return 0;
     }
@@ -237,15 +253,17 @@ int main( int argc, char* argv[] ){
               histogram[val] += 1;
               break;
 
+            case 'm':
+            case 's':
             case 'e':
               if(x > 1 && x+1 < width && y > 0 && y+1 < height){
-                  apply_edge_detection(&bmp_in, &bmp_out, x, y);
-              }
-              break;
-
-            case 'm':
-              if(x > 1 && x+1 < width && y > 0 && y+1 < height){
+                if(argv[ 3 ][i] == 'm'){
                   apply_median_filter(&bmp_in, &bmp_out, x, y);
+                } else if(argv[ 3 ][i] == 's'){
+                  apply_smoothing_filter(&bmp_in, &bmp_out, x, y);
+                } else if(argv[ 3 ][i] =='e'){
+                  apply_edge_detection(&bmp_in, &bmp_out, x, y);
+                }
               }
               break;
 
