@@ -48,7 +48,7 @@ void create_files(BMP** in, BMP** out, const char* filename){
     *out = BMP_ReadFile( filename );
 }
 
-void clear_and_delete(BMP** in, BMP** ou){
+void clear_and_delete(BMP** in, BMP** out){
     if(*in != *out){ //avoids a seg fault
       BMP_Free( *out );
     }
