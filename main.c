@@ -10,8 +10,6 @@
 #define filter_size 15
 
 struct args{
-  BMP* bmp_in;
-  BMP* bmp_out;
   UINT height;
   UINT width;
   char command;
@@ -20,6 +18,8 @@ struct args{
 
 UINT histogram[256] = {0};
 pthread_mutex_t histogram_mutex;
+BMP* bmp_in;
+BMP* bmp_out;
 
 //Get length of string, from Stack Overflow
 int strlength(const char* string){ //https://stackoverflow.com/questions/25578886/
@@ -48,7 +48,7 @@ void create_files(BMP** in, BMP** out, const char* filename){
     *out = BMP_ReadFile( filename );
 }
 
-void clear_and_delete(BMP** in, BMP** out){
+void clear_and_delete(BMP** in, BMP** ou){
     if(*in != *out){ //avoids a seg fault
       BMP_Free( *out );
     }
@@ -199,13 +199,11 @@ void *controller(void *input){
     int height = ((struct args*)input)->height;
     int width = ((struct args*)input)->width;
     char command = ((struct args*)input)->command;
-    BMP* bmp_in = ((struct args*)input)->bmp_in;
-    BMP* bmp_out = ((struct args*)input)->bmp_out;
     UINT x, y;
     UCHAR val;
     /* Iterate through all the image's pixels */
-    for ( x = 0 ; x < width ; x++ ){
-      for ( y = start ; y < height ; y+=num_threads ){
+    for ( x = start ; x < width ; x+=num_threads ){
+      for ( y = 0 ; y < height ; y++ ){
         switch( command ){
           case 'b':
             black_and_white(&bmp_in, &bmp_out, x, y, 100);
@@ -271,8 +269,6 @@ void *controller(void *input){
 }
 
 int main( int argc, char* argv[] ){
-    BMP*    bmp_in;
-    BMP*    bmp_out;
     UINT    width, height;
     UINT    i, t;
     UCHAR   val;
@@ -311,8 +307,6 @@ int main( int argc, char* argv[] ){
     for (i = 0; i < command_length; i++){
         for(t = 0; t< num_threads; t++){
           struct args *inArg = (struct args *)malloc(sizeof(struct args));
-          inArg->bmp_in = bmp_in;
-          inArg->bmp_out = bmp_out;
           inArg->height = height;
           inArg->width = width;
           inArg->command = argv[3][i];
