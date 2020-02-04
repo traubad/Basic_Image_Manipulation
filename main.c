@@ -7,7 +7,7 @@
 
 #define num_threads 8
 //keep this as an odd number!
-#define filter_size 15
+#define filter_size 5
 
 struct args{
   UINT height;
