@@ -5,10 +5,9 @@
 #include <math.h>
 #include <pthread.h>
 
-#define temp_filename ".temp.bmp"
 #define num_threads 8
 //keep this as an odd number!
-#define filter_size 5
+#define filter_size 15
 
 struct args{
   BMP* bmp_in;
@@ -54,7 +53,6 @@ void clear_and_delete(BMP** in, BMP** out){
       BMP_Free( *out );
     }
     BMP_Free( *in );
-    remove(temp_filename);
 }
 
 void apply_left_rotation(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y, UINT height){
@@ -126,8 +124,8 @@ void apply_median_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
   UCHAR* vals = (UCHAR*)malloc(filter_size * filter_size * sizeof(UCHAR));
   short i = 0;
 
-  for (short z= 0-((filter_size-1)/2); z<= ((filter_size-1)/2); z++){
-    for (short w= 0-((filter_size-1)/2); w<=((filter_size-1)/2); w++){
+  for (short z= 0-(filter_size/2); z<= (filter_size/2); z++){
+    for (short w= 0-(filter_size/2); w<=(filter_size/2); w++){
       BMP_GetPixelIndex(*bmp_in, x+w, y+z, &val);
       vals[i++] = val;
     }
@@ -143,8 +141,8 @@ void apply_smoothing_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
   unsigned short sum = 0;
   short i = 0;
 
-  for (short z= 0-((filter_size-1)/2); z<= ((filter_size-1)/2); z++){
-    for (short w= 0-((filter_size-1)/2); w<=((filter_size-1)/2); w++){
+  for (short z= 0-(filter_size/2); z<= (filter_size/2); z++){
+    for (short w= 0-(filter_size/2); w<=(filter_size/2); w++){
       BMP_GetPixelIndex(*bmp_in, x+w, y+z, &val);
       sum += val;
     }
@@ -245,12 +243,14 @@ void *controller(void *input){
 
           case 's':
           case 'm':
-            if(x > ((filter_size-1)/2) && x+1 < width && y > ((filter_size-1)/2) && y+1 < height){
+            if(x > (filter_size/2) && x < width-(filter_size/2) && y > (filter_size/2) && y < height-(filter_size/2)){
               if(command == 'm'){
                 apply_median_filter(&bmp_in, &bmp_out, x, y);
               } else if(command == 's'){
                 apply_smoothing_filter(&bmp_in, &bmp_out, x, y);
               }
+            } else {
+              BMP_SetPixelIndex(bmp_out, x, y, 0);
             }
             break;
 
