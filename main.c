@@ -16,7 +16,7 @@ struct args{
   unsigned char start;
 };
 
-UINT histogram[256] = {0};
+_Atomic UINT histogram[256] = {0};
 pthread_mutex_t histogram_mutex;
 BMP* bmp_in;
 BMP* bmp_out;
@@ -29,7 +29,7 @@ int strlength(const char* string){ //https://stackoverflow.com/questions/2557888
 }
 
 //creates a comma separated string of ints from an array (taken from Stack Overflow)
-size_t join_integers(UINT *num, size_t num_len, char *buf, size_t buf_len) {
+size_t join_integers(_Atomic UINT *num, size_t num_len, char *buf, size_t buf_len) {
     size_t i;
     UINT written = strlength(buf);
 
@@ -254,9 +254,9 @@ void *controller(void *input){
 
           case 'g':
              BMP_GetPixelIndex(bmp_in, x, y, &val);
-             pthread_mutex_lock(&histogram_mutex);
+             //pthread_mutex_lock(&histogram_mutex);
              histogram[val]++;
-             pthread_mutex_unlock(&histogram_mutex);
+             //pthread_mutex_unlock(&histogram_mutex);
              break;
 
           default: //TODO this could be better
