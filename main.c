@@ -6,7 +6,7 @@
 
 #define temp_filename ".temp.bmp"
 //only use odd numbers here
-#define filter_size 5
+#define filter_size 15
 
 //Get length of string, from Stack Overflow
 int strlength(const char* string){ //https://stackoverflow.com/questions/25578886/
@@ -263,12 +263,14 @@ int main( int argc, char* argv[] ){
 
             case 'm':
             case 's':
-              if(x > ((filter_size-1)/2) && x+1 < width && y > ((filter_size-1)/2) && y+1 < height){
+              if(x > (filter_size/2) && x+(filter_size/2) < width && y > (filter_size/2) && y+(filter_size/2) < height){
                 if(argv[ 3 ][i] == 'm'){
                   apply_median_filter(&bmp_in, &bmp_out, x, y);
                 } else if(argv[ 3 ][i] == 's'){
                   apply_smoothing_filter(&bmp_in, &bmp_out, x, y);
                 }
+              } else {
+                BMP_SetPixelIndex(bmp_out, x, y, 0);
               }
               break;
 
