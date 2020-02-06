@@ -9,6 +9,8 @@
 //keep this as an odd number!
 #define filter_size 5
 
+#define location(x,y)  (( 512 - y - 1 ) * 512 + x )
+
 struct args{
   UINT height;
   UINT width;
@@ -137,14 +139,14 @@ void apply_median_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
 
 //Based on this paper: https://www.ijsr.net/archive/v6i3/25031706.pdf
 void apply_smoothing_filter(BMP** bmp_in, BMP** bmp_out, UINT x, UINT y){
-  UCHAR val;
+  UCHAR* pixel = BMP_GetData(*bmp_in);
   unsigned short sum = 0;
   short i = 0;
 
   for (short z= 0-(filter_size/2); z<= (filter_size/2); z++){
     for (short w= 0-(filter_size/2); w<=(filter_size/2); w++){
-      BMP_GetPixelIndex(*bmp_in, x+w, y+z, &val);
-      sum += val;
+      //BMP_GetPixelIndex(*bmp_in, x+w, y+z, &val);
+      sum += *(pixel + location(x+w,y+z));
     }
   }
   BMP_SetPixelIndex(*bmp_out, x, y, sum/(filter_size*filter_size));

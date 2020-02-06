@@ -383,13 +383,6 @@ UINT BMP_GetWidth( BMP* bmp )
 
 	return ( bmp->Header.Width );
 }
-/**************************************************************
-	Returns the image's width.
-**************************************************************/
-UCHAR* BMP_GetData( BMP* bmp )
-{
-	return ( bmp->Data );
-}
 
 
 /**************************************************************
@@ -406,6 +399,11 @@ UINT BMP_GetHeight( BMP* bmp )
 	BMP_LAST_ERROR_CODE = BMP_OK;
 
 	return ( bmp->Header.Height );
+}
+
+UCHAR* BMP_GetData( BMP* bmp )
+{
+	return ( bmp-> Data );
 }
 
 
